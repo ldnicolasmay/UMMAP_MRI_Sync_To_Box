@@ -27,10 +27,12 @@ def main():
                         help='REQUIRED: destination Box Folder ID')
     parser.add_argument('-u', '--update_files', action='store_true',
                         help='update older Box files with new local copies; VERY TIME CONSUMING')
+    parser.add_argument('-r', '--regex_subfolder', nargs='+',
+                        help='regular expression strings to use for subfolder matches')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='print actions to stdout')
     args = parser.parse_args()
-    # print(args)
+    print(args)
 
     #################
     # Configuration #
@@ -58,8 +60,13 @@ def main():
         print("Path to Box JWT config:", jwt_cfg_path, "\n")
 
     # Set the path to the folder that will hold the upload
-    # box_folder_id = "100650703184"
     box_folder_id = args.box_folder_id
+
+    # Set regexes of subfolders and subfiles to sync
+    rgx_subfolder = re.compile(r'^hlp17umm\d{5}_\d{5}$|^s\d{5}$')  # e.g., 'hlp17umm00700_06072', 's00003'
+    if args.regex_subfolder:
+        re.compile("|".join(args.regex_subfolder))
+    rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')                 # e.g., 'i53838914.MRDC.3'
 
     ############################
     # Establish Box Connection #
@@ -73,11 +80,8 @@ def main():
     #########################################################
     # Recurse Through Directories to Sync Files/Directories #
 
-    rgx_subfolders = re.compile(r'^hlp17umm\d{5}_\d{5}$|^s\d{5}$')  # e.g., 'hlp17umm00700_06072', 's00003'
-    rgx_subfiles = re.compile(r'^i\d+\.MRDC\.\d+$')                 # e.g., 'i53838914.MRDC.3'
-
     hlps.walk_local_dir_tree_sync_contents(mri_dir_entry, box_client, box_folder,
-                                           rgx_subfolders, rgx_subfiles,
+                                           rgx_subfolder, rgx_subfile,
                                            update_subfiles=args.update_files, is_verbose=is_verbose)
 
 

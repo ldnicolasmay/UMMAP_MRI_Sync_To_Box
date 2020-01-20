@@ -32,7 +32,7 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='print actions to stdout')
     args = parser.parse_args()
-    print(args)
+    #  print(args)
 
     #################
     # Configuration #
@@ -65,7 +65,9 @@ def main():
     # Set regexes of subfolders and subfiles to sync
     rgx_subfolder = re.compile(r'^hlp17umm\d{5}_\d{5}$|^s\d{5}$')  # e.g., 'hlp17umm00700_06072', 's00003'
     if args.regex_subfolder:
-        re.compile("|".join(args.regex_subfolder))
+        rgx_subfolder = re.compile("|".join(args.regex_subfolder))
+    if is_verbose:
+        print(rgx_subfolder)
     rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')                 # e.g., 'i53838914.MRDC.3'
 
     ############################

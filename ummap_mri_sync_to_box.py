@@ -19,7 +19,7 @@ def main():
     # Parse Args #
 
     parser = argparse.ArgumentParser(description="Sync `madcbrain` MRI DICOMs to Box.")
-    parser.add_argument('-p', '--path', required=True,
+    parser.add_argument('-m', '--mri_path', required=True,
                         help='REQUIRED: absolute path to directory containing MRI folders')
     parser.add_argument('-j', '--jwt_cfg', required=True,
                         help='REQUIRED: absolute path to JWT config file')
@@ -40,15 +40,15 @@ def main():
     # Access args.verbose once
     is_verbose = args.verbose
 
-    # Set the path of the folder whose contents should be copied to Box
-    path_split = args.path.split('/')
-    if path_split[-1] == '':
-        del path_split[-1]
-    base_path = '/'.join(path_split[:-1] + [''])
-    mri_dir = path_split[-1]
+    # Set the path of the folder whose MRI contents should be copied to Box
+    mri_path_split = args.mri_path.split('/')
+    if mri_path_split[-1] == '':
+        del mri_path_split[-1]
+    mri_base_path = '/'.join(mri_path_split[:-1] + [''])
+    mri_dir = mri_path_split[-1]
     # Using os.DirEntry object initially b/c os.scandir is better directory iterator.
     # See https://www.python.org/dev/peps/pep-0471/ for details
-    dir_entries = os.scandir(base_path)
+    dir_entries = os.scandir(mri_base_path)
     mri_dir_entry = list(filter(lambda dir_entry: dir_entry.name == mri_dir, dir_entries))[0]
     if is_verbose:
         print()

@@ -340,7 +340,6 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
     deleted_box_subfolders_ids, created_box_subfolders_ids = \
         sync_box_subfolders(local_subfolders, box_folder, box_subfolders, is_verbose)
 
-
     # Files #
     local_subfiles = get_local_subfiles(local_subitems, rgx_subfile)
     box_subfiles = get_box_subfiles(box_subitems)

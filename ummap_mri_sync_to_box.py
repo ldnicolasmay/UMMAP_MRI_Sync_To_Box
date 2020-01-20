@@ -19,9 +19,6 @@ def main():
     #####################
     # Print Color Setup #
 
-    clr_mgn = fg('magenta')
-    clr_cyn = fg('cyan')
-    clr_grn = fg('green')
     clr_blu = fg('blue')
     clr_bld = attr('bold')
     clr_wrn = fg('red') + attr('bold')
@@ -38,9 +35,9 @@ def main():
     parser.add_argument('-b', '--box_folder_id', required=True,
                         help=f"{clr_bld}REQUIRED{clr_rst}: destination Box Folder ID")
     parser.add_argument('-u', '--update_files', action='store_true',
-                        help=f"update older Box files with new local copies; {clr_wrn}VERY TIME CONSUMING{clr_rst}")
+                        help=f"update older Box files with new local copies; {clr_wrn}TIME CONSUMING{clr_rst}")
     parser.add_argument('-r', '--regex_subfolder', nargs='+',
-                        help=f"{clr_wrn}SINGLE-QUOTED{clr_rst} regular expression strings to use for subfolder matches")
+                        help=f"{clr_bld}QUOTED{clr_rst} regular expression strings to use for subfolder matches")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help=f"print actions to stdout")
     args = parser.parse_args()

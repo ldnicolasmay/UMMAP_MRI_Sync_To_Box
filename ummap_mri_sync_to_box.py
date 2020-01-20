@@ -6,6 +6,7 @@
 import os
 import re
 import argparse
+from colored import fg, attr
 
 import ummap_mri_sync_to_box_helpers as hlps
 
@@ -15,22 +16,33 @@ import ummap_mri_sync_to_box_helpers as hlps
 
 def main():
 
+    #####################
+    # Print Color Setup #
+
+    clr_mgn = fg('magenta')
+    clr_cyn = fg('cyan')
+    clr_grn = fg('green')
+    clr_blu = fg('blue')
+    clr_bld = attr('bold')
+    clr_wrn = fg('red') + attr('bold')
+    clr_rst = attr('reset')
+
     ##############
     # Parse Args #
 
     parser = argparse.ArgumentParser(description="Sync `madcbrain` MRI DICOMs to Box.")
     parser.add_argument('-m', '--mri_path', required=True,
-                        help='REQUIRED: absolute path to directory containing MRI folders')
+                        help=f"{clr_bld}REQUIRED{clr_rst}: absolute path to directory containing MRI folders")
     parser.add_argument('-j', '--jwt_cfg', required=True,
-                        help='REQUIRED: absolute path to JWT config file')
+                        help=f"{clr_bld}REQUIRED{clr_rst}: absolute path to JWT config file")
     parser.add_argument('-b', '--box_folder_id', required=True,
-                        help='REQUIRED: destination Box Folder ID')
+                        help=f"{clr_bld}REQUIRED{clr_rst}: destination Box Folder ID")
     parser.add_argument('-u', '--update_files', action='store_true',
-                        help='update older Box files with new local copies; VERY TIME CONSUMING')
+                        help=f"update older Box files with new local copies; {clr_wrn}VERY TIME CONSUMING{clr_rst}")
     parser.add_argument('-r', '--regex_subfolder', nargs='+',
-                        help='regular expression strings to use for subfolder matches')
+                        help=f"{clr_wrn}SINGLE-QUOTED{clr_rst} regular expression strings to use for subfolder matches")
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help='print actions to stdout')
+                        help=f"print actions to stdout")
     args = parser.parse_args()
     #  print(args)
 
@@ -52,12 +64,12 @@ def main():
     mri_dir_entry = list(filter(lambda dir_entry: dir_entry.name == mri_dir, dir_entries))[0]
     if is_verbose:
         print()
-        print("Path to MRI folders:", mri_dir_entry.path, "\n")
+        print(f"{clr_blu}Path to MRI folders{clr_rst}:", f"{clr_bld}{mri_dir_entry.path}{clr_rst}")
 
     # Set the path to your JWT app config JSON file
     jwt_cfg_path = args.jwt_cfg
     if is_verbose:
-        print("Path to Box JWT config:", jwt_cfg_path, "\n")
+        print(f"{clr_blu}Path to Box JWT config{clr_rst}:", f"{clr_bld}{jwt_cfg_path}{clr_rst}")
 
     # Set the path to the folder that will hold the upload
     box_folder_id = args.box_folder_id
@@ -67,7 +79,7 @@ def main():
     if args.regex_subfolder:
         rgx_subfolder = re.compile("|".join(args.regex_subfolder))
     if is_verbose:
-        print(rgx_subfolder)
+        print(f"{clr_blu}Folder regex(es){clr_rst}:", f"{clr_bld}{rgx_subfolder}{clr_rst}", "\n")
     rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')                 # e.g., 'i53838914.MRDC.3'
 
     ############################

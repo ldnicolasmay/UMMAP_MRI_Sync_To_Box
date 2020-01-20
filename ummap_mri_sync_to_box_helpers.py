@@ -6,6 +6,7 @@ import os.path
 from boxsdk import JWTAuth, Client
 from datetime import datetime
 from pytz import timezone
+from colored import fg, attr
 
 
 ###########
@@ -38,6 +39,19 @@ box_folder_attrs = [
 ]
 
 tz_east = timezone("US/Eastern")
+
+#####################
+# Print Color Setup #
+
+clr_mgn = fg('magenta')
+clr_cyn = fg('cyan')
+clr_grn = fg('green')
+clr_blu = fg('blue')
+clr_bld = attr('bold')
+clr_bgr = fg('green') + attr('bold')
+clr_bor = fg('gold_1') + attr('bold')
+clr_brd = fg('red') + attr('bold')
+clr_rst = attr('reset')
 
 
 ######################
@@ -108,7 +122,7 @@ def get_box_authenticated_client(box_json_config_path, is_verbose=False):
         raise ValueError(f"`box_json_config_path` must be a path to the JSON config file for your Box JWT app")
     auth = JWTAuth.from_settings_file(box_json_config_path)
     if is_verbose:
-        print("Authenticating...")
+        print(f"{clr_blu}Authenticating...{clr_rst}\n")
     auth.authenticate_instance()
     return Client(auth)
 
@@ -213,7 +227,8 @@ def delete_box_subfolders_not_found_in_local(local_subfolders, box_subfolders, i
         if box_subfolder_deleted:
             deleted_box_subfolders_ids.append(box_subfolder_id)
             if is_verbose:
-                print(f"  Deleted subfolder '{box_subfolder_name}' with ID '{box_subfolder_id}'")
+                print(f"  {clr_brd}Deleted subfolder{clr_rst}", f"'{box_subfolder_name}'",
+                      f"{clr_brd}with ID{clr_rst}", f"'{box_subfolder_id}'")
     return deleted_box_subfolders_ids
 
 
@@ -228,7 +243,8 @@ def create_box_subfolders_found_in_local(local_subfolders, box_folder, box_subfo
         box_subfolder = box_folder.create_subfolder(local_subfolder.name)
         created_box_subfolders_ids.append(box_subfolder.id)
         if is_verbose:
-            print(f"  Created subfolder '{box_subfolder.name}' with ID '{box_subfolder.id}'")
+            print(f"  {clr_bgr}Created subfolder{clr_rst}", f"'{box_subfolder.name}'",
+                  f"{clr_bgr}with ID{clr_rst}", f"'{box_subfolder.id}'")
     return created_box_subfolders_ids
 
 
@@ -245,7 +261,8 @@ def delete_box_subfiles_not_found_in_local(local_subfiles, box_subfiles, is_verb
         if box_subfile_deleted:
             deleted_box_subfiles_ids.append(box_subfile_id)
             if is_verbose:
-                print(f"  Deleted subfile '{box_subfile_name}' with ID '{box_subfile_id}'")
+                print(f"  {clr_brd}Deleted subfile{clr_rst}", f"'{box_subfile_name}'",
+                      f"{clr_brd}with ID{clr_rst}", f"'{box_subfile_id}'")
     return deleted_box_subfiles_ids
 
 
@@ -261,7 +278,8 @@ def create_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles,
         box_subfile_id = box_subfile.id
         created_box_subfiles_ids.append(box_subfile_id)
         if is_verbose:
-            print(f"  Created subfile '{box_subfile.name}' with ID '{box_subfile_id}'")
+            print(f"  {clr_bgr}Created subfile{clr_rst}", f"'{box_subfile.name}'",
+                  f"{clr_bgr}with ID{clr_rst}", f"'{box_subfile_id}'")
     return created_box_subfiles_ids
 
 
@@ -285,7 +303,8 @@ def update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, b
             updated_box_subfile_id = updated_box_subfile.id
             updated_box_subfiles_ids.append(updated_box_subfile_id)
             if is_verbose:
-                print(f"  Updated subfile '{updated_box_subfile.name}' with ID '{updated_box_subfile_id}'")
+                print(f"  {clr_bor}Updated subfile{clr_rst}", f"'{updated_box_subfile.name}'",
+                      f"{clr_bor}with ID{clr_rst}", f"'{updated_box_subfile_id}'")
     return updated_box_subfiles_ids
 
 
@@ -329,7 +348,7 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
                                       rgx_subfolder, rgx_subfile,
                                       update_subfiles=False, is_verbose=False):
     if is_verbose:
-        print("Box Folder ID:", box_folder.id)
+        print(f"{clr_mgn}Box Folder ID{clr_rst}:", box_folder.id)
 
     local_subitems = get_local_subitems(local_folder)
     box_subitems = get_box_subitems(box_client, box_folder)
@@ -347,11 +366,11 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
         sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, update_subfiles, is_verbose)
 
     if is_verbose:
-        print("  Deleted Box subfolders:", deleted_box_subfolders_ids)
-        print("  Created Box subfolders:", created_box_subfolders_ids)
-        print("  Deleted Box subfiles:", deleted_box_subfiles_ids)
-        print("  Created Box subfiles:", created_box_subfiles_ids)
-        print("  Updated Box subfiles:", updated_box_subfiles_ids)
+        print(f"  {clr_mgn}Deleted Box subfolders{clr_rst}:", deleted_box_subfolders_ids)
+        print(f"  {clr_mgn}Created Box subfolders{clr_rst}:", created_box_subfolders_ids)
+        print(f"  {clr_mgn}Deleted Box subfiles{clr_rst}:", deleted_box_subfiles_ids)
+        print(f"  {clr_mgn}Created Box subfiles{clr_rst}:", created_box_subfiles_ids)
+        print(f"  {clr_mgn}Updated Box subfiles{clr_rst}:", updated_box_subfiles_ids)
 
     # Recurse Down #
     for local_subfolder in local_subfolders:

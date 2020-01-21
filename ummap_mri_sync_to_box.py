@@ -29,17 +29,18 @@ def main():
 
     parser = argparse.ArgumentParser(description="Sync `madcbrain` MRI DICOMs to Box.")
     parser.add_argument('-m', '--mri_path', required=True,
-                        help=f"{clr_bld}REQUIRED{clr_rst}: absolute path to directory containing MRI folders")
+                        help=f"{clr_bld}required{clr_rst}: absolute path to directory containing MRI folders")
     parser.add_argument('-j', '--jwt_cfg', required=True,
-                        help=f"{clr_bld}REQUIRED{clr_rst}: absolute path to JWT config file")
+                        help=f"{clr_bld}required{clr_rst}: absolute path to JWT config file")
     parser.add_argument('-b', '--box_folder_id', required=True,
-                        help=f"{clr_bld}REQUIRED{clr_rst}: destination Box Folder ID")
+                        help=f"{clr_bld}required{clr_rst}: destination Box Folder ID")
     parser.add_argument('-u', '--update_files', action='store_true',
-                        help=f"update older Box files with new local copies; {clr_wrn}TIME CONSUMING{clr_rst}")
+                        help=f"{clr_wrn}time consuming{clr_rst}: update older Box files with new local copies")
     parser.add_argument('-r', '--regex_subfolder', nargs='+',
-                        help=f"{clr_bld}QUOTED{clr_rst} regular expression strings to use for subfolder matches")
+                        help=f"{clr_bld}quoted{clr_rst} regular expression strings to use for subfolder matches")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help=f"print actions to stdout")
+    parser.format_help()
     args = parser.parse_args()
     #  print(args)
 
@@ -61,23 +62,25 @@ def main():
     mri_dir_entry = list(filter(lambda dir_entry: dir_entry.name == mri_dir, dir_entries))[0]
     if is_verbose:
         print()
-        print(f"{clr_blu}Path to MRI folders{clr_rst}:", f"{clr_bld}{mri_dir_entry.path}{clr_rst}")
+        print(f"{clr_blu}Path to MRI folders{clr_rst}:", f"{mri_dir_entry.path}")
 
     # Set the path to your JWT app config JSON file
     jwt_cfg_path = args.jwt_cfg
     if is_verbose:
-        print(f"{clr_blu}Path to Box JWT config{clr_rst}:", f"{clr_bld}{jwt_cfg_path}{clr_rst}")
+        print(f"{clr_blu}Path to Box JWT config{clr_rst}:", f"{jwt_cfg_path}")
 
     # Set the path to the folder that will hold the upload
     box_folder_id = args.box_folder_id
 
     # Set regexes of subfolders and subfiles to sync
     rgx_subfolder = re.compile(r'^hlp17umm\d{5}_\d{5}$|^s\d{5}$')  # e.g., 'hlp17umm00700_06072', 's00003'
-    if args.regex_subfolder:
-        rgx_subfolder = re.compile("|".join(args.regex_subfolder))
+    args_regex_subfolder = args.regex_subfolder
+    if args_regex_subfolder:
+        rgx_subfolder = re.compile("|".join(args_regex_subfolder))
     if is_verbose:
-        print(f"{clr_blu}Folder regex(es){clr_rst}:", f"{clr_bld}{rgx_subfolder}{clr_rst}", "\n")
-    rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')                 # e.g., 'i53838914.MRDC.3'
+        print(f"{clr_blu}Folder regex(es){clr_rst}:", f"{rgx_subfolder}", "\n")
+
+    rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')  # e.g., 'i53838914.MRDC.3'
 
     ############################
     # Establish Box Connection #

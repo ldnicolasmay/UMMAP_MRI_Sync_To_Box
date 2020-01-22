@@ -265,7 +265,7 @@ def delete_box_subfolders_not_found_in_local(local_subfolders, box_subfolders, i
         if box_subfolder_deleted:
             deleted_box_subfolders_ids.append(box_subfolder_id)
             if is_verbose:
-                print(f"  {clr_brd}Deleted subfolder{clr_rst}", f"'{box_subfolder_name}'",
+                print(f"  {clr_brd}Deleted subFolder{clr_rst}", f"'{box_subfolder_name}'",
                       f"{clr_brd}with ID{clr_rst}", f"'{box_subfolder_id}'")
     return deleted_box_subfolders_ids
 
@@ -293,7 +293,7 @@ def create_box_subfolders_found_in_local(local_subfolders, box_folder, box_subfo
         box_subfolder = box_folder.create_subfolder(local_subfolder.name)
         created_box_subfolders_ids.append(box_subfolder.id)
         if is_verbose:
-            print(f"  {clr_bgr}Created subfolder{clr_rst}", f"'{box_subfolder.name}'",
+            print(f"  {clr_bgr}Created subFolder{clr_rst}", f"'{box_subfolder.name}'",
                   f"{clr_bgr}with ID{clr_rst}", f"'{box_subfolder.id}'")
     return created_box_subfolders_ids
 
@@ -321,7 +321,7 @@ def delete_box_subfiles_not_found_in_local(local_subfiles, box_subfiles, is_verb
         if box_subfile_deleted:
             deleted_box_subfiles_ids.append(box_subfile_id)
             if is_verbose:
-                print(f"  {clr_brd}Deleted subfile{clr_rst}", f"'{box_subfile_name}'",
+                print(f"  {clr_brd}Deleted subFile{clr_rst}", f"'{box_subfile_name}'",
                       f"{clr_brd}with ID{clr_rst}", f"'{box_subfile_id}'")
     return deleted_box_subfiles_ids
 
@@ -350,7 +350,7 @@ def create_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles,
         box_subfile_id = box_subfile.id
         created_box_subfiles_ids.append(box_subfile_id)
         if is_verbose:
-            print(f"  {clr_bgr}Created subfile{clr_rst}", f"'{box_subfile.name}'",
+            print(f"  {clr_bgr}Created subFile{clr_rst}", f"'{box_subfile.name}'",
                   f"{clr_bgr}with ID{clr_rst}", f"'{box_subfile_id}'")
     return created_box_subfiles_ids
 
@@ -390,7 +390,7 @@ def update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, b
             updated_box_subfile_id = updated_box_subfile.id
             updated_box_subfiles_ids.append(updated_box_subfile_id)
             if is_verbose:
-                print(f"  {clr_bor}Updated subfile{clr_rst}", f"'{updated_box_subfile.name}'",
+                print(f"  {clr_bor}Updated subFile{clr_rst}", f"'{updated_box_subfile.name}'",
                       f"{clr_bor}with ID{clr_rst}", f"'{updated_box_subfile_id}'")
     return updated_box_subfiles_ids
 

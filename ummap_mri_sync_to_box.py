@@ -40,7 +40,6 @@ def main():
                         help=f"{clr_bld}quoted{clr_rst} regular expression strings to use for subfolder matches")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help=f"print actions to stdout")
-    parser.format_help()
     args = parser.parse_args()
     #  print(args)
 

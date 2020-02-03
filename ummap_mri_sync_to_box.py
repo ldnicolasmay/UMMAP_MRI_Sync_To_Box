@@ -41,7 +41,6 @@ def main():
     parser.add_argument('-v', '--verbose', action='store_true',
                         help=f"print actions to stdout")
     args = parser.parse_args()
-    #  print(args)
 
     #################
     # Configuration #

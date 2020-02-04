@@ -9,7 +9,7 @@ To run the app from a Bash command line, you need to know four pieces of informa
 1. `MRI_PATH`: Path to parent directory that holds all MRI directories and files.
 2. `JWT_CFG`: Path to the Box JWT config file that authenticates the MADC Server Access App to interact with MADC Box Account files.
 3. `BOX_FOLDER_ID`: The Box Folder ID that will hold all the MRI directories and files.
-4. `REGEX_SUBFOLDER [REGEX_SUBFOLDER ...]`: Regex patterns for the subdirectories that will be uploaded.
+4. `REGEX_SUBFOLDER [REGEX_SUBFOLDER ...]`: Regex patterns for the subdirectories that will be uploaded. _**Regex patterns should be quoted!**_ (See [example run](https://github.com/ldnicolasmay/UMMAP_MRI_Sync_To_Box#example-run) or [example run with logging](https://github.com/ldnicolasmay/UMMAP_MRI_Sync_To_Box#example-run-with-logging) below.)
 
 There are two basic modes for this app:
 
@@ -43,7 +43,7 @@ Here's an example verbose run from a Bash prompt:
 
 ```
 python3 ummap_mri_sync_to_box.py                                  \
-  --mri_path /path/to/srouce/mri_folder                           \
+  --mri_path /path/to/source/mri_folder                           \
   --jwt_cfg /path/to/box_jwt_config.json                          \
   --box_folder_id 012345678910                                    \
   --regex_subfolder "^hlp17umm\d{5}_\d{5}$" "^dicom$" "^s\d{5}$"  \
@@ -56,10 +56,9 @@ For now, logging should be done with Bash redirect operator `>`:
 
 ```
 python3 ummap_mri_sync_to_box.py                                  \
-  --mri_path /path/to/srouce/mri_folder                           \
+  --mri_path /path/to/source/mri_folder                           \
   --jwt_cfg /path/to/box_jwt_config.json                          \
   --box_folder_id 012345678910                                    \
   --regex_subfolder "^hlp17umm\d{5}_\d{5}$" "^dicom$" "^s\d{5}$"  \
   --verbose > log/$(date "%Y-%m-%d_%H-%M-%S").log
 ```
-

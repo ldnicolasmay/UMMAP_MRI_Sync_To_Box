@@ -29,9 +29,10 @@ def main():
 
     parser = argparse.ArgumentParser(description="Sync `madcbrain` MRI DICOMs to Box.")
     parser.add_argument('-m', '--mri_path', required=True,
-                        help=f"{clr_bld}required{clr_rst}: absolute path to directory containing MRI folders")
+                        help=f"{clr_bld}required{clr_rst}: " +
+                             f"absolute path to local directory containing source MRI folders")
     parser.add_argument('-j', '--jwt_cfg', required=True,
-                        help=f"{clr_bld}required{clr_rst}: absolute path to JWT config file")
+                        help=f"{clr_bld}required{clr_rst}: absolute path to local JWT config file")
     parser.add_argument('-b', '--box_folder_id', required=True,
                         help=f"{clr_bld}required{clr_rst}: destination Box Folder ID")
     parser.add_argument('-u', '--update_files', action='store_true',

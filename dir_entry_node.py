@@ -132,10 +132,11 @@ class DirEntryNode:
         for dir_entry_node_file in self.child_dir_entry_node_files:
             print("  " * dir_entry_node_file.depth + dir_entry_node_file.dir_entry.name)
 
-    def write_tree_object_items(self, box_folder, is_verbose=False):
+    def write_tree_object_items(self, box_folder, update_files=False, is_verbose=False):
         """
 
         :param box_folder:
+        :param update_files:
         :param is_verbose:
         :return:
         """
@@ -143,34 +144,59 @@ class DirEntryNode:
         box_subfolders = hlps.get_box_subfolders(box_subitems)
         box_subfiles = hlps.get_box_subfiles(box_subitems)
 
-        self.create_box_subfolders(box_folder, box_subfolders, is_verbose)
+        self.remove_box_subfolders(box_subfolders, is_verbose)
+        self.create_box_subfolders(box_folder, box_subfolders, update_files, is_verbose)
         self.create_box_subfiles(box_folder, box_subfiles, is_verbose)
+        if update_files:
+            self.update_box_subfiles(box_folder, box_subfiles, is_verbose)
 
-    def create_box_subfolders(self, box_folder, box_subfolders, is_verbose=False):
+    def create_box_subfolders(self, box_folder, box_subfolders, update_files, is_verbose=False):
         """
 
         :param box_folder:
         :param box_subfolders:
+        :param update_files:
         :param is_verbose:
         :return:
         """
         box_subfolder_names = [box_subfolder.name for box_subfolder in box_subfolders]
+
         subfolders_in_treeobj_not_in_box = \
             [dir_entry_node_subfolder for dir_entry_node_subfolder in self.child_dir_entry_node_folders
              if dir_entry_node_subfolder.dir_entry.name not in box_subfolder_names]  # filter
-        subfolder_in_treeobj_in_box = \
+
+        subfolders_in_treeobj_in_box = \
             [dir_entry_node_subfolder for dir_entry_node_subfolder in self.child_dir_entry_node_folders
              if dir_entry_node_subfolder.dir_entry.name in box_subfolder_names]  # filter
 
         for dir_entry_node_folder in subfolders_in_treeobj_not_in_box:  # depth-first
             box_subfolder = box_folder.create_subfolder(dir_entry_node_folder.dir_entry.name)
             if is_verbose:
-                dir_entry_node_folder.print_subitem_creation(box_subfolder)
-            dir_entry_node_folder.write_tree_object_items(box_subfolder, is_verbose)
+                dir_entry_node_folder.print_subitem_action(box_subfolder, "Creating")
+            dir_entry_node_folder.write_tree_object_items(box_subfolder, update_files, is_verbose)
 
-        for dir_entry_node_folder in subfolder_in_treeobj_in_box:
+        for dir_entry_node_folder in subfolders_in_treeobj_in_box:
             box_subfolder = hlps.get_corresponding_box_subfolder(dir_entry_node_folder.dir_entry, box_folder)
-            dir_entry_node_folder.write_tree_object_items(box_subfolder, is_verbose)
+            dir_entry_node_folder.write_tree_object_items(box_subfolder, update_files, is_verbose)
+
+    def remove_box_subfolders(self, box_subfolders, is_verbose):
+        """"""
+        dir_entry_node_subfolder_names = \
+            [dir_entry_node_subfolder.dir_entry.name for dir_entry_node_subfolder in self.child_dir_entry_node_folders]
+
+        subfolders_in_box_not_in_treeobj = \
+            [box_subfolder for box_subfolder in box_subfolders
+             if box_subfolder.name not in dir_entry_node_subfolder_names]
+
+        for box_subfolder in subfolders_in_box_not_in_treeobj:
+            box_subfolder_id, box_subfolder_name = box_subfolder.id, box_subfolder.name
+            box_subfolder_deleted = box_subfolder.delete(recursive=True)
+            if box_subfolder_deleted and is_verbose:
+                print("  " * (self.depth + 1) +
+                      f"{hlps.clr_brd}Removed Box subFolder{hlps.clr_rst}",
+                      f"'{box_subfolder_name}'",
+                      f"{hlps.clr_brd}with ID{hlps.clr_rst}",
+                      f"'{box_subfolder_id}'")
 
     def create_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
         """
@@ -181,6 +207,7 @@ class DirEntryNode:
         :return:
         """
         box_subfile_names = [box_subfile.name for box_subfile in box_subfiles]
+
         subfiles_in_treeobj_not_in_box = \
             [dir_entry_node_subfile for dir_entry_node_subfile in self.child_dir_entry_node_files
              if dir_entry_node_subfile.dir_entry.name not in box_subfile_names]  # filter
@@ -188,11 +215,38 @@ class DirEntryNode:
         for dir_entry_node_file in subfiles_in_treeobj_not_in_box:
             box_subfile = box_folder.upload(dir_entry_node_file.dir_entry.path, preflight_check=True)
             if is_verbose:
-                dir_entry_node_file.print_subitem_creation(box_subfile)
+                dir_entry_node_file.print_subitem_action(box_subfile, "Creating")
 
-    def print_subitem_creation(self, box_subitem):
+    def update_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
+        """
+
+        :param box_folder:
+        :param box_subfiles:
+        :param is_verbose:
+        :return:
+        """
+        box_subfile_names = [box_subfile.name for box_subfile in box_subfiles]
+
+        subfiles_in_treeobj_in_box = \
+            [dir_entry_node_subfile for dir_entry_node_subfile in self.child_dir_entry_node_files
+             if dir_entry_node_subfile.dir_entry.name in box_subfile_names]  # filter
+
+        for dir_entry_node_file in subfiles_in_treeobj_in_box:
+            den_file_de = dir_entry_node_file.dir_entry
+            corres_box_subfile = hlps.get_corresponding_box_subfile(den_file_de, box_folder)
+            box_subfile = corres_box_subfile.update_contents(den_file_de.path, preflight_check=True)
+            if is_verbose:
+                dir_entry_node_file.print_subitem_action(box_subfile, "Updating")
+
+    def print_subitem_action(self, box_subitem, action_str):
+        """
+
+        :param box_subitem:
+        :param action_str:
+        :return:
+        """
         print("  " * self.depth +
-              f"{hlps.clr_bgr}Created sub{box_subitem.type.capitalize()}{hlps.clr_rst}",
+              f"{hlps.clr_bgr}{action_str} sub{box_subitem.type.capitalize()}{hlps.clr_rst}",
               f"'{box_subitem.name}'",
               f"{hlps.clr_bgr}with ID{hlps.clr_rst}",
               f"'{box_subitem.id}'")

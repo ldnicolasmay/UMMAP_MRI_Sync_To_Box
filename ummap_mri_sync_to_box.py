@@ -115,7 +115,7 @@ def main():
     # root_node.print_node()
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
     # root_node.print_node()
-    root_node.write_tree_object_items(box_folder, is_verbose=True)
+    root_node.write_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
 
 
 if __name__ == "__main__":

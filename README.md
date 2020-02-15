@@ -48,7 +48,7 @@ python3 ummap_mri_sync_to_box.py                                  \
   --mri_path /path/to/source/mri_folder                           \
   --jwt_cfg /path/to/box_jwt_config.json                          \
   --box_folder_id 012345678910                                    \
-  --regex_subfolder "^hlp17umm\d{5}_\d{5}$" "^dicom$" "^s\d{5}$"  \
+  --subfolder_regex "^hlp17umm\d{5}_\d{5}$" "^dicom$" "^s\d{5}$"  \
   --sequence_regex "^t1sag.*$" "^t2flairsag.*$"                   \
   --verbose
 ```
@@ -62,7 +62,7 @@ python3 ummap_mri_sync_to_box.py                                  \
   --mri_path /path/to/source/mri_folder                           \
   --jwt_cfg /path/to/box_jwt_config.json                          \
   --box_folder_id 012345678910                                    \
-  --regex_subfolder "^hlp17umm\d{5}_\d{5}$" "^dicom$" "^s\d{5}$"  \
+  --subfolder_regex "^hlp17umm\d{5}_\d{5}$" "^dicom$" "^s\d{5}$"  \
   --sequence_regex "^t1sag.*$" "^t2flairsag.*$"                   \
   --verbose > log/$(date "%Y-%m-%d_%H-%M-%S").log
 ```

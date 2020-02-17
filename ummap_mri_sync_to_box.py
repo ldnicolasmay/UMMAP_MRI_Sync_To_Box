@@ -64,7 +64,6 @@ def main():
     dir_entries = os.scandir(mri_base_path)
     mri_dir_entry = list(filter(lambda dir_entry: dir_entry.name == mri_dir, dir_entries))[0]
     if is_verbose:
-        print()
         print(f"{clr_blu}Path to MRI folders{clr_rst}:", f"{mri_dir_entry.path}")
 
     # Set the path to your JWT app config JSON file
@@ -91,7 +90,7 @@ def main():
     if args_sequence_regex:
         rgx_sequence = re.compile("|".join(args_sequence_regex))
     if is_verbose:
-        print(f"{clr_blu}Sequence regex(es){clr_rst}:", f"{rgx_sequence}", "\n")
+        print(f"{clr_blu}Sequence regex(es){clr_rst}:", f"{rgx_sequence}")
 
     ############################
     # Establish Box Connection #
@@ -112,10 +111,9 @@ def main():
     # Traverse local source directory to build tree object
     root_node = den.DirEntryNode(mri_dir_entry, depth=0)
     root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
-    # root_node.print_node()
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
-    # root_node.print_node()
     root_node.write_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
+    print(f"{clr_blu}Done.{clr_rst}\n")
 
 
 if __name__ == "__main__":

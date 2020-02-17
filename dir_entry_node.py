@@ -1,6 +1,25 @@
 import os
 import re
+import pydicom
+from datetime import datetime
+from pytz import timezone
+from colored import fg, attr
+
 import ummap_mri_sync_to_box_helpers as hlps
+
+###########
+# Globals #
+
+# US Eastern timezone for comparing file timestamps
+tz_east = timezone("US/Eastern")
+
+#####################
+# Print Color Setup #
+
+clr_bgr = fg('green') + attr('bold')
+clr_bor = fg('gold_1') + attr('bold')
+clr_brd = fg('red') + attr('bold')
+clr_rst = attr('reset')
 
 
 class DirEntryNode:
@@ -78,7 +97,8 @@ class DirEntryNode:
                 return True
 
         for dir_entry_node_file in self.child_dir_entry_node_files:
-            dir_entry_node_dicom_dataset = hlps.get_local_dicom_dataset(dir_entry_node_file.dir_entry)
+            # dir_entry_node_dicom_dataset = hlps.get_local_dicom_dataset(dir_entry_node_file.dir_entry)
+            dir_entry_node_dicom_dataset = dir_entry_node_file.get_local_dicom_dataset()
             if re.match(rgx_series_descrip, dir_entry_node_dicom_dataset.SeriesDescription):
                 return True
 
@@ -145,6 +165,7 @@ class DirEntryNode:
         box_subfiles = hlps.get_box_subfiles(box_subitems)
 
         self.remove_box_subfolders(box_subfolders, is_verbose)
+        self.remove_box_subfiles(box_subfiles, is_verbose)
         self.create_box_subfolders(box_folder, box_subfolders, update_files, is_verbose)
         self.create_box_subfiles(box_folder, box_subfiles, is_verbose)
         if update_files:
@@ -172,7 +193,7 @@ class DirEntryNode:
         for dir_entry_node_folder in subfolders_in_treeobj_not_in_box:  # depth-first
             box_subfolder = box_folder.create_subfolder(dir_entry_node_folder.dir_entry.name)
             if is_verbose:
-                dir_entry_node_folder.print_subitem_action(box_subfolder, "Creating")
+                dir_entry_node_folder.print_subitem_action(box_subfolder, "Creating", clr_bgr)
             dir_entry_node_folder.write_tree_object_items(box_subfolder, update_files, is_verbose)
 
         for dir_entry_node_folder in subfolders_in_treeobj_in_box:
@@ -193,10 +214,28 @@ class DirEntryNode:
             box_subfolder_deleted = box_subfolder.delete(recursive=True)
             if box_subfolder_deleted and is_verbose:
                 print("  " * (self.depth + 1) +
-                      f"{hlps.clr_brd}Removed Box subFolder{hlps.clr_rst}",
+                      f"{clr_brd}Removed Box subFolder{clr_rst}",
                       f"'{box_subfolder_name}'",
-                      f"{hlps.clr_brd}with ID{hlps.clr_rst}",
+                      f"{clr_brd}with ID{clr_rst}",
                       f"'{box_subfolder_id}'")
+
+    def remove_box_subfiles(self, box_subfiles, is_verbose):
+        dir_entry_node_subfile_names = \
+            [dir_entry_node_subfile.dir_entry.name for dir_entry_node_subfile in self.child_dir_entry_node_files]
+
+        subfiles_in_box_not_in_treeobj = \
+            [box_subfile for box_subfile in box_subfiles
+             if box_subfile.name not in dir_entry_node_subfile_names]
+
+        for box_subfile in subfiles_in_box_not_in_treeobj:
+            box_subfile_id, box_subfile_name = box_subfile.id, box_subfile.name
+            box_subfile_deleted = box_subfile.delete()
+            if box_subfile_deleted and is_verbose:
+                print("  " * (self.depth + 1) +
+                      f"{clr_brd}Removed Box subFile{clr_rst}",
+                      f"'{box_subfile_name}'",
+                      f"{clr_brd}with ID{clr_rst}",
+                      f"'{box_subfile_id}'")
 
     def create_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
         """
@@ -215,7 +254,7 @@ class DirEntryNode:
         for dir_entry_node_file in subfiles_in_treeobj_not_in_box:
             box_subfile = box_folder.upload(dir_entry_node_file.dir_entry.path, preflight_check=True)
             if is_verbose:
-                dir_entry_node_file.print_subitem_action(box_subfile, "Creating")
+                dir_entry_node_file.print_subitem_action(box_subfile, "Creating", clr_bgr)
 
     def update_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
         """
@@ -234,11 +273,22 @@ class DirEntryNode:
         for dir_entry_node_file in subfiles_in_treeobj_in_box:
             den_file_de = dir_entry_node_file.dir_entry
             corres_box_subfile = hlps.get_corresponding_box_subfile(den_file_de, box_folder)
-            box_subfile = corres_box_subfile.update_contents(den_file_de.path, preflight_check=True)
-            if is_verbose:
-                dir_entry_node_file.print_subitem_action(box_subfile, "Updating")
 
-    def print_subitem_action(self, box_subitem, action_str):
+            # Local subfile modified timestamp
+            den_file_de_modified_psx = den_file_de.stat().st_mtime
+            den_file_de_modified_dt = datetime.fromtimestamp(den_file_de_modified_psx, tz=tz_east)
+
+            # Corresponding Box subFile modified timestamp
+            corres_box_subfile_modified_str = corres_box_subfile.modified_at
+            corres_box_subfile_modified_dt = datetime.fromisoformat(corres_box_subfile_modified_str)
+
+            # Update corres_box_subfile with contents of more recent local_subfile
+            if den_file_de_modified_dt > corres_box_subfile_modified_dt:
+                box_subfile = corres_box_subfile.update_contents(den_file_de.path, preflight_check=True)
+                if is_verbose:
+                    dir_entry_node_file.print_subitem_action(box_subfile, "Updating", clr_bor)
+
+    def print_subitem_action(self, box_subitem, action_str, clr):
         """
 
         :param box_subitem:
@@ -246,7 +296,25 @@ class DirEntryNode:
         :return:
         """
         print("  " * self.depth +
-              f"{hlps.clr_bgr}{action_str} sub{box_subitem.type.capitalize()}{hlps.clr_rst}",
+              f"{clr}{action_str} sub{box_subitem.type.capitalize()}{clr_rst}",
               f"'{box_subitem.name}'",
-              f"{hlps.clr_bgr}with ID{hlps.clr_rst}",
+              f"{clr}with ID{clr_rst}",
               f"'{box_subitem.id}'")
+
+    ###########################
+    # DICOM Handler Functions #
+
+    def get_local_dicom_dataset(self, rgx_dicom=re.compile(r'^i\d+\.MRDC\.\d+$')):
+        """
+
+        :param rgx_dicom:
+        :type  rgx_dicom: Regex
+
+        :return: A pydicom Dataset
+        :rtype: pydicom Dataset
+        """
+        dicom_dataseries = pydicom.Dataset()
+        if re.match(rgx_dicom, self.dir_entry.name):
+            dicom_dataseries = pydicom.dcmread(self.dir_entry.path)
+
+        return dicom_dataseries

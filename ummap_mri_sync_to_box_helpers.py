@@ -140,7 +140,7 @@ def get_box_authenticated_client(box_json_config_path, is_verbose=False):
         raise ValueError(f"`box_json_config_path` must be a path to the JSON config file for your Box JWT app")
     auth = JWTAuth.from_settings_file(box_json_config_path)
     if is_verbose:
-        print(f"{clr_blu}Authenticating...{clr_rst}\n")
+        print(f"{clr_blu}Authenticating...{clr_rst}")
     auth.authenticate_instance()
     return Client(auth)
 
@@ -525,8 +525,8 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
 def get_local_dicom_dataset(dir_entry_file, rgx_dicom=re.compile(r'^i\d+\.MRDC\.\d+$')):
     """
 
-    :param file: A DirEntry file of a DICOM dataset (where a DICOM "dataset" is a DICOM file)
-    :type  file: DirEntry
+    :param dir_entry_file: A DirEntry file of a DICOM dataset (where a DICOM "dataset" is a DICOM file)
+    :type  dir_entry_file: DirEntry
 
     :return: A pydicom Dataset
     :rtype: pydicom Dataset

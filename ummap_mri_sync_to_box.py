@@ -110,8 +110,11 @@ def main():
 
     # Traverse local source directory to build tree object
     root_node = den.DirEntryNode(mri_dir_entry, depth=0)
+    print(f"{clr_blu}Building node  from root node...{clr_rst}")
     root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
+    print(f"{clr_blu}Pruning nodes...{clr_rst}")
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
+    print(f"{clr_blu}Syncing nodes to Box...{clr_rst}")
     root_node.sync_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
     print(f"{clr_blu}Done.{clr_rst}\n")
 

@@ -110,7 +110,7 @@ def main():
 
     # Traverse local source directory to build tree object
     root_node = den.DirEntryNode(mri_dir_entry, depth=0)
-    print(f"{clr_blu}Building node  from root node...{clr_rst}")
+    print(f"{clr_blu}Building DirEntryNode tree from root node...{clr_rst}")
     root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
     print(f"{clr_blu}Pruning nodes...{clr_rst}")
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)

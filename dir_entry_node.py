@@ -133,11 +133,11 @@ class DirEntryNode:
         :param rgx_file: A Regex for filtering which files to add as children to the calling DirEntryNode
         :type  rgx_file: Regex
         """
-        # Ensure there are fewer than 500 files in the directory
+        # Ensure there are fewer than 250 files in the directory; T1s and T2 Flairs have no more than ~200 files
         item_count = len(os.listdir(self.dir_entry.path))
         # print(f"Number of items in {self.dir_entry.name}: {item_count}")
 
-        if item_count < 500:
+        if item_count < 250:
 
             dir_entries = list(os.scandir(self.dir_entry))  # each item in called twice, so list is needed
 

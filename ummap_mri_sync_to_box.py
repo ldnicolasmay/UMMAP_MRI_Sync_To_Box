@@ -20,7 +20,7 @@ def main():
     #####################
     # Print Color Setup #
 
-    clr_blu = fg('blue')
+    clr_mgn = fg('magenta')
     clr_bld = attr('bold')
     clr_wrn = fg('red') + attr('bold')
     clr_rst = attr('reset')
@@ -64,12 +64,12 @@ def main():
     dir_entries = os.scandir(mri_base_path)
     mri_dir_entry = list(filter(lambda dir_entry: dir_entry.name == mri_dir, dir_entries))[0]
     if is_verbose:
-        print(f"{clr_blu}Path to MRI folders{clr_rst}:", f"{mri_dir_entry.path}")
+        print(f"{clr_mgn}Path to MRI folders{clr_rst}:", f"{mri_dir_entry.path}")
 
     # Set the path to your JWT app config JSON file
     jwt_cfg_path = args.jwt_cfg
     if is_verbose:
-        print(f"{clr_blu}Path to Box JWT config{clr_rst}:", f"{jwt_cfg_path}")
+        print(f"{clr_mgn}Path to Box JWT config{clr_rst}:", f"{jwt_cfg_path}")
 
     # Set the path to the folder that will hold the upload
     box_folder_id = args.box_folder_id
@@ -80,7 +80,7 @@ def main():
     if args_subfolder_regex:
         rgx_subfolder = re.compile("|".join(args_subfolder_regex))
     if is_verbose:
-        print(f"{clr_blu}Folder regex(es){clr_rst}:", f"{rgx_subfolder}")
+        print(f"{clr_mgn}Folder regex(es){clr_rst}:", f"{rgx_subfolder}")
 
     rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')  # e.g., 'i53838914.MRDC.3'
 
@@ -90,7 +90,7 @@ def main():
     if args_sequence_regex:
         rgx_sequence = re.compile("|".join(args_sequence_regex))
     if is_verbose:
-        print(f"{clr_blu}Sequence regex(es){clr_rst}:", f"{rgx_sequence}")
+        print(f"{clr_mgn}Sequence regex(es){clr_rst}:", f"{rgx_sequence}")
 
     ############################
     # Establish Box Connection #
@@ -110,13 +110,13 @@ def main():
 
     # Traverse local source directory to build tree object
     root_node = den.DirEntryNode(mri_dir_entry, depth=0)
-    print(f"{clr_blu}Building DirEntryNode tree from root node...{clr_rst}")
+    print(f"{clr_mgn}Building DirEntryNode tree from root node...{clr_rst}")
     root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
-    print(f"{clr_blu}Pruning nodes...{clr_rst}")
+    print(f"{clr_mgn}Pruning nodes...{clr_rst}")
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
-    print(f"{clr_blu}Syncing nodes to Box...{clr_rst}")
+    print(f"{clr_mgn}Syncing nodes to Box...{clr_rst}")
     root_node.sync_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
-    print(f"{clr_blu}Done.{clr_rst}\n")
+    print(f"{clr_mgn}Done.{clr_rst}\n")
 
 
 if __name__ == "__main__":

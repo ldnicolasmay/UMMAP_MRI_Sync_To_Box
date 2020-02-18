@@ -137,7 +137,7 @@ def get_box_authenticated_client(box_json_config_path, is_verbose=False):
         raise ValueError(f"`box_json_config_path` must be a path to the JSON config file for your Box JWT app")
     auth = JWTAuth.from_settings_file(box_json_config_path)
     if is_verbose:
-        print(f"{clr_blu}Authenticating...{clr_rst}")
+        print(f"{clr_mgn}Authenticating...{clr_rst}")
     auth.authenticate_instance()
     return Client(auth)
 

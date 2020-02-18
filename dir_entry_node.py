@@ -133,12 +133,7 @@ class DirEntryNode:
         :param rgx_file: A Regex for filtering which files to add as children to the calling DirEntryNode
         :type  rgx_file: Regex
         """
-        # Ensure there are fewer than 250 files in the directory; T1s and T2 Flairs have no more than ~200 files
-        item_count = len(os.listdir(self.dir_entry.path))
-        print(f"Number of items in {self.dir_entry.name}: {item_count}")
-
-        if item_count < 400:
-
+        if not re.match(r'^s\d{5}$', self.dir_entry.name):
             dir_entries = list(os.scandir(self.dir_entry))  # each item in called twice, so list is needed
 
             dir_entry_folders = [dir_entry for dir_entry in dir_entries
@@ -154,6 +149,28 @@ class DirEntryNode:
             for dir_entry_file in dir_entry_files:
                 new_dir_entry_node_file = DirEntryNode(dir_entry_file, depth=self.depth + 1)
                 self.add_child(new_dir_entry_node_file)
+
+        if re.match(r'^s\d{5}$', self.dir_entry.name):
+            # Ensure there are fewer than 250 files in the directory; T1s and T2 Flairs have no more than ~200 files
+            item_count = len(os.listdir(self.dir_entry.path))
+            print(f"Number of items in {self.dir_entry.name}: {item_count}")
+
+            if item_count < 400:
+                dir_entries = list(os.scandir(self.dir_entry))  # each item in called twice, so list is needed
+
+                dir_entry_folders = [dir_entry for dir_entry in dir_entries
+                                     if dir_entry.is_dir() and re.match(rgx_folder, dir_entry.name)]  # filter
+                dir_entry_files = [dir_entry for dir_entry in dir_entries
+                                   if dir_entry.is_file() and re.match(rgx_file, dir_entry.name)]  # filter
+
+                for dir_entry_folder in dir_entry_folders:
+                    new_dir_entry_node_folder = DirEntryNode(dir_entry_folder, depth=self.depth + 1)
+                    self.add_child(new_dir_entry_node_folder)
+                    new_dir_entry_node_folder.build_tree_from_node(rgx_folder, rgx_file)
+
+                for dir_entry_file in dir_entry_files:
+                    new_dir_entry_node_file = DirEntryNode(dir_entry_file, depth=self.depth + 1)
+                    self.add_child(new_dir_entry_node_file)
 
     def print_node(self):
         """Print a hierarchical representation of the calling DirEntryNode object"""

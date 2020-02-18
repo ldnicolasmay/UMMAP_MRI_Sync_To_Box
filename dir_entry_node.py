@@ -137,7 +137,7 @@ class DirEntryNode:
         item_count = len(os.listdir(self.dir_entry.path))
         # print(f"Number of items in {self.dir_entry.name}: {item_count}")
 
-        if item_count < 250:
+        if item_count < 300:
 
             dir_entries = list(os.scandir(self.dir_entry))  # each item in called twice, so list is needed
 

@@ -14,14 +14,6 @@ import ummap_mri_sync_to_box_helpers as hlps
 # US Eastern timezone for comparing file timestamps
 tz_east = timezone("US/Eastern")
 
-#####################
-# Print Color Setup #
-
-clr_bgr = fg('green') + attr('bold')
-clr_bor = fg('gold_1') + attr('bold')
-clr_brd = fg('red') + attr('bold')
-clr_rst = attr('reset')
-
 
 class DirEntryNode:
     """"""
@@ -150,10 +142,10 @@ class DirEntryNode:
                 new_dir_entry_node_file = DirEntryNode(dir_entry_file, depth=self.depth + 1)
                 self.add_child(new_dir_entry_node_file)
 
-        if re.match(r'^s\d{5}$', self.dir_entry.name):
+        else:
             # Ensure there are fewer than 250 files in the directory; T1s and T2 Flairs have no more than ~200 files
             item_count = len(os.listdir(self.dir_entry.path))
-            print(f"Number of items in {self.dir_entry.name}: {item_count}")
+            # print(f"Number of items in {self.dir_entry.name}: {item_count}")
 
             if item_count < 250:
                 dir_entries = list(os.scandir(self.dir_entry))  # each item in called twice, so list is needed
@@ -228,7 +220,7 @@ class DirEntryNode:
         for dir_entry_node_folder in subfolders_in_treeobj_not_in_box:  # depth-first
             box_subfolder = box_folder.create_subfolder(dir_entry_node_folder.dir_entry.name)
             if is_verbose:
-                dir_entry_node_folder.print_subitem_action(box_subfolder, "Creating", clr_bgr)
+                dir_entry_node_folder.print_subitem_action(box_subfolder, "Creating")
             dir_entry_node_folder.sync_tree_object_items(box_subfolder, update_files, is_verbose)
 
         for dir_entry_node_folder in subfolders_in_treeobj_in_box:
@@ -255,9 +247,9 @@ class DirEntryNode:
             box_subfolder_deleted = box_subfolder.delete(recursive=True)
             if box_subfolder_deleted and is_verbose:
                 print("  " * (self.depth + 1) +
-                      f"{clr_brd}Removed Box subFolder{clr_rst}",
+                      f"Removed Box subFolder",
                       f"'{box_subfolder_name}'",
-                      f"{clr_brd}with ID{clr_rst}",
+                      f"with ID",
                       f"'{box_subfolder_id}'")
 
     def create_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
@@ -278,7 +270,7 @@ class DirEntryNode:
         for dir_entry_node_file in subfiles_in_treeobj_not_in_box:
             box_subfile = box_folder.upload(dir_entry_node_file.dir_entry.path, preflight_check=True)
             if is_verbose:
-                dir_entry_node_file.print_subitem_action(box_subfile, "Creating", clr_bgr)
+                dir_entry_node_file.print_subitem_action(box_subfile, "Creating")
 
     def update_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
         """Helper function: Update Box subFiles based on timestamps of child files in calling DirEntryNode object
@@ -334,22 +326,21 @@ class DirEntryNode:
             box_subfile_deleted = box_subfile.delete()
             if box_subfile_deleted and is_verbose:
                 print("  " * (self.depth + 1) +
-                      f"{clr_brd}Removed Box subFile{clr_rst}",
+                      f"Removed Box subFile",
                       f"'{box_subfile_name}'",
-                      f"{clr_brd}with ID{clr_rst}",
+                      f"with ID",
                       f"'{box_subfile_id}'")
 
-    def print_subitem_action(self, box_subitem, action_str, color):
+    def print_subitem_action(self, box_subitem, action_str):
         """Helper function: Print info about action taken on Box subItem
 
         :param box_subitem: A Box Folder or Box File to print info about
         :param action_str: A str of what action is being taken
-        :param color: A colored module color for highlighting stdout print
         """
         print("  " * self.depth +
-              f"{color}{action_str} sub{box_subitem.type.capitalize()}{clr_rst}",
+              f"{action_str} sub{box_subitem.type.capitalize()}",
               f"'{box_subitem.name}'",
-              f"{color}with ID{clr_rst}",
+              f"with ID",
               f"'{box_subitem.id}'")
 
     ###########################

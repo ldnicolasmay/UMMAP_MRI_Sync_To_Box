@@ -112,7 +112,7 @@ def main():
     root_node = den.DirEntryNode(mri_dir_entry, depth=0)
     root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
-    root_node.write_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
+    root_node.sync_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
     print(f"{clr_blu}Done.{clr_rst}\n")
 
 

@@ -47,10 +47,7 @@ tz_east = timezone("US/Eastern")
 # Print Color Setup #
 
 clr_mgn = fg('magenta')
-clr_cyn = fg('cyan')
-clr_grn = fg('green')
 clr_blu = fg('blue')
-clr_bld = attr('bold')
 clr_bgr = fg('green') + attr('bold')
 clr_bor = fg('gold_1') + attr('bold')
 clr_brd = fg('red') + attr('bold')
@@ -161,8 +158,6 @@ def print_box_user_info(box_client):
 def get_box_subitems(box_folder, fields=box_folder_attrs):
     """Get a collection of all immediate subitems in Box Folder
 
-    :param box_client: An authenticated Box client
-    :type  box_client: Client
     :param box_folder: A Box Folder whose contents we want to fetch
     :type  box_folder: Folder
     :param fields: An optional list of Box subitem fields to include with each item
@@ -207,8 +202,6 @@ def get_corresponding_box_subfolder(local_subfolder, box_folder):
 
     :param local_subfolder: A DirEntry subfolder whose corresponding Box subfolder we want to find
     :type  local_subfolder: DirEntry
-    :param box_client: An authenticated Box Client
-    :type  box_client: Client
     :param box_folder: A Box Folder whose contents may hold the corresponding Box subfolder
     :type  box_folder: Folder
 
@@ -229,8 +222,6 @@ def get_corresponding_box_subfile(local_subfile, box_folder):
 
     :param local_subfile: A DirEntry subfile whose corresponding Box subFile we want to find
     :type  local_subfile: DirEntry
-    :param box_client: An authenticated Box Client
-    :type  box_client: Client
     :param box_folder: A Box Folder whose contents may hold the corresponding Box subFile
     :type  box_folder: Folder
 
@@ -359,13 +350,11 @@ def create_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles,
     return created_box_subfiles_ids
 
 
-def update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, box_subfiles, is_verbose=False):
+def update_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles, is_verbose=False):
     """Update existing Box subFiles that are found in--but are older than--local subfiles
 
     :param local_subfiles: A list of DirEntry files to sync Box against
     :type  local_subfiles: list[DirEntry]
-    :param box_client: An authenticated Box client
-    :type  box_client: Client
     :param box_folder: Parent Box Folder to put updated Box subFiles into
     :type  box_folder: Folder
     :param box_subfiles: A list of Box Files to sync against local files
@@ -425,13 +414,11 @@ def sync_box_subfolders(local_subfolders, box_folder, box_subfolders, is_verbose
     return deleted_box_subfolders_ids, created_box_subfolders_ids
 
 
-def sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, update_subfiles=False, is_verbose=False):
+def sync_box_subfiles(local_subfiles, box_folder, box_subfiles, update_subfiles=False, is_verbose=False):
     """Run functions to sync Box subFiles
 
     :param local_subfiles: A list of DirEntry files to sync Box against
     :type  local_subfiles: list[DirEntry]
-    :param box_client: An authenticated Box client
-    :type  box_client: Client
     :param box_folder: A parent Box Folder to sync local files in
     :type  box_folder: Folder
     :param box_subfiles: A list of Box Files to sync against local files
@@ -457,7 +444,7 @@ def sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, upda
     # (1,1) Found in MADCBrain, Found in Box: Update Box subFile with updated local subfile
     if update_subfiles:
         updated_box_subfiles_ids = \
-            update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, box_subfiles, is_verbose)
+            update_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles, is_verbose)
 
     return deleted_box_subfiles_ids, created_box_subfiles_ids, updated_box_subfiles_ids
 
@@ -502,7 +489,7 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
     local_subfiles = get_local_subfiles(local_subitems, regex_subfile)
     box_subfiles = get_box_subfiles(box_subitems)
     deleted_box_subfiles_ids, created_box_subfiles_ids, updated_box_subfiles_ids = \
-        sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, update_subfiles, is_verbose)
+        sync_box_subfiles(local_subfiles, box_folder, box_subfiles, update_subfiles, is_verbose)
 
     if is_verbose:
         print(f"  {clr_mgn}Deleted Box subFolders{clr_rst}:", deleted_box_subfolders_ids)
@@ -523,10 +510,12 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
 # DICOM Handler Functions #
 
 def get_local_dicom_dataset(dir_entry_file, rgx_dicom=re.compile(r'^i\d+\.MRDC\.\d+$')):
-    """
+    """Get the DICOM Dataset from the file that matches the provided Regex
 
-    :param dir_entry_file: A DirEntry file of a DICOM dataset (where a DICOM "dataset" is a DICOM file)
+    :param dir_entry_file: A DirEntry file of a DICOM Dataset (where a DICOM "dataset" is a DICOM file)
     :type  dir_entry_file: DirEntry
+    :param rgx_dicom: A Regex for matching a DICOM Dataset file
+    :type  rgx_dicom: Regex
 
     :return: A pydicom Dataset
     :rtype: pydicom Dataset
@@ -539,14 +528,16 @@ def get_local_dicom_dataset(dir_entry_file, rgx_dicom=re.compile(r'^i\d+\.MRDC\.
 
 
 def get_local_dicom_sequence(dir_entry_folder, rgx_dicom=re.compile(r'^i\d+\.MRDC\.\d+$'), presort=True):
-    """
+    """Get the DICOM Sequence in a given DirEntry folder whose DICOM Datasets that match the provided Regex
 
-    :param dir_path: A DirEntry folder holding DICOM datasets that will be bundled as a DICOM Sequence
-    :type  dir_path: DirEntry
+    :param dir_entry_folder: A DirEntry folder holding DICOM Datasets that will be bundled as a DICOM Sequence
+    :type  dir_entry_folder: DirEntry
     :param rgx_dicom: A Regex matching the DICOM filenames
     :type  rgx_dicom: Regex
+    :param presort: A boolean flag for sorting the DICOM Datasets within the DICOM Sequence before returning it
+    :type  presort: boolean
 
-    :return: pydicom Sequence of DICOM datasets (where a DICOM "dataset" is a DICOM file)
+    :return: pydicom Sequence of DICOM Datasets (where a DICOM "dataset" is a DICOM file)
     :rtype: pydicom Sequence
     """
     subitems = get_local_subitems(dir_entry_folder)
@@ -561,9 +552,9 @@ def get_local_dicom_sequence(dir_entry_folder, rgx_dicom=re.compile(r'^i\d+\.MRD
 
 
 def get_local_dicom_sequence_series_descrip(dicom_sequence):
-    """
+    """Get all the DICOM Datasets as a list from the provided DICOM Sequence
 
-    :param dicom_sequence: A pydicom Sequence of DICOM datasets (where a DICOM "dataset" is a DICOM file)
+    :param dicom_sequence: A pydicom Sequence of DICOM Datasets (where a DICOM "dataset" is a DICOM file)
     :type  dicom_sequence: pydicom Sequence
 
     :return: A list of strings of the pydicom Sequence's Series Descriptions (e.g., "t1sag_208")
@@ -573,15 +564,15 @@ def get_local_dicom_sequence_series_descrip(dicom_sequence):
 
 
 def all_local_dicom_sequence_series_descrip_match(dicom_sequence, rgx_dicom):
-    """
+    """Check whether all DICOM Datasets in a DICOM Sequence match the provided Regex
 
-    :param dicom_sequence:
-    :type  dicom_sequence:
-    :param rgx_dicom:
-    :type  rgx_dicom:
+    :param dicom_sequence: A pydicom Sequence of DICOM Datasets (where a DICOM "dataset" is a DICOM file)
+    :type  dicom_sequence: pydicom Sequence
+    :param rgx_dicom: A Regex matching the dicom Series Description
+    :type  rgx_dicom: Regex
 
-    :return:
-    :rtype:
+    :return: A boolean for whether all the DICOM Datasets in the Sequence match the Series Description Regex
+    :rtype: boolean
     """
     if len(dicom_sequence) == 0:
         return False

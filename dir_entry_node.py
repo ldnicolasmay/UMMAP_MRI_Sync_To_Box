@@ -304,7 +304,7 @@ class DirEntryNode:
             if den_file_de_modified_dt > corres_box_subfile_modified_dt:
                 box_subfile = corres_box_subfile.update_contents(den_file_de.path, preflight_check=True)
                 if is_verbose:
-                    dir_entry_node_file.print_subitem_action(box_subfile, "Updating", clr_bor)
+                    dir_entry_node_file.print_subitem_action(box_subfile, "Updating")
 
     def remove_box_subfiles(self, box_subfiles, is_verbose):
         """Helper function: Remove Box subFiles based on absent child files in calling DirEntryNode object

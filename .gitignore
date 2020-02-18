@@ -1,6 +1,8 @@
 .idea/*
 __pycache__/*
 venv/*
+temp/*
+.DS_Store
 *.txt
 *.doc*
 *.csv

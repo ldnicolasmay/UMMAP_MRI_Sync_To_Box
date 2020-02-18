@@ -133,9 +133,6 @@ class DirEntryNode:
         :param rgx_file: A Regex for filtering which files to add as children to the calling DirEntryNode
         :type  rgx_file: Regex
         """
-        # Print progress dot
-        print(".", end="")
-
         dir_entries = list(os.scandir(self.dir_entry))  # each item in called twice, so list is needed
 
         dir_entry_folders = [dir_entry for dir_entry in dir_entries

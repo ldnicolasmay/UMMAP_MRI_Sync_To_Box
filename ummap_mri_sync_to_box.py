@@ -9,6 +9,7 @@ import argparse
 from colored import fg, attr
 
 import ummap_mri_sync_to_box_helpers as hlps
+import dir_entry_node as den
 
 
 ########
@@ -35,10 +36,13 @@ def main():
                         help=f"{clr_bld}required{clr_rst}: absolute path to local JWT config file")
     parser.add_argument('-b', '--box_folder_id', required=True,
                         help=f"{clr_bld}required{clr_rst}: destination Box Folder ID")
+    parser.add_argument('-f', '--subfolder_regex', nargs='+', required=True,
+                        help=f"{clr_bld}quoted{clr_rst} regular expression strings to use for subfolder matches")
+    parser.add_argument('-s', '--sequence_regex', nargs='+', required=True,
+                        help=f"{clr_bld}quoted{clr_rst} regular expression strings to use for "
+                             f"MRI Series Description matches")
     parser.add_argument('-u', '--update_files', action='store_true',
                         help=f"{clr_wrn}time consuming{clr_rst}: update older Box files with new local copies")
-    parser.add_argument('-r', '--regex_subfolder', nargs='+',
-                        help=f"{clr_bld}quoted{clr_rst} regular expression strings to use for subfolder matches")
     parser.add_argument('-v', '--verbose', action='store_true',
                         help=f"print actions to stdout")
     args = parser.parse_args()
@@ -60,7 +64,6 @@ def main():
     dir_entries = os.scandir(mri_base_path)
     mri_dir_entry = list(filter(lambda dir_entry: dir_entry.name == mri_dir, dir_entries))[0]
     if is_verbose:
-        print()
         print(f"{clr_blu}Path to MRI folders{clr_rst}:", f"{mri_dir_entry.path}")
 
     # Set the path to your JWT app config JSON file
@@ -72,14 +75,22 @@ def main():
     box_folder_id = args.box_folder_id
 
     # Set regexes of subfolders and subfiles to sync
-    rgx_subfolder = re.compile(r'^hlp17umm\d{5}_\d{5}$|^s\d{5}$')  # e.g., 'hlp17umm00700_06072', 's00003'
-    args_regex_subfolder = args.regex_subfolder
-    if args_regex_subfolder:
-        rgx_subfolder = re.compile("|".join(args_regex_subfolder))
+    rgx_subfolder = re.compile(r'^hlp17umm\d{5}_\d{5}$|^dicom$|^s\d{5}$')  # e.g., hlp17umm00700_06072, dicom, s00003
+    args_subfolder_regex = args.subfolder_regex
+    if args_subfolder_regex:
+        rgx_subfolder = re.compile("|".join(args_subfolder_regex))
     if is_verbose:
-        print(f"{clr_blu}Folder regex(es){clr_rst}:", f"{rgx_subfolder}", "\n")
+        print(f"{clr_blu}Folder regex(es){clr_rst}:", f"{rgx_subfolder}")
 
     rgx_subfile = re.compile(r'^i\d+\.MRDC\.\d+$')  # e.g., 'i53838914.MRDC.3'
+
+    # Set regexes of dicom dataset sequence series descriptions to sync
+    rgx_sequence = re.compile(r'^t1sag.*$|^t2flairsag.*$')
+    args_sequence_regex = args.sequence_regex
+    if args_sequence_regex:
+        rgx_sequence = re.compile("|".join(args_sequence_regex))
+    if is_verbose:
+        print(f"{clr_blu}Sequence regex(es){clr_rst}:", f"{rgx_sequence}")
 
     ############################
     # Establish Box Connection #
@@ -93,9 +104,16 @@ def main():
     #########################################################
     # Recurse Through Directories to Sync Files/Directories #
 
-    hlps.walk_local_dir_tree_sync_contents(mri_dir_entry, box_client, box_folder,
-                                           rgx_subfolder, rgx_subfile,
-                                           update_subfiles=args.update_files, is_verbose=is_verbose)
+    # hlps.walk_local_dir_tree_sync_contents(mri_dir_entry, box_client, box_folder,
+    #                                        rgx_subfolder, rgx_subfile,
+    #                                        update_subfiles=args.update_files, is_verbose=is_verbose)
+
+    # Traverse local source directory to build tree object
+    root_node = den.DirEntryNode(mri_dir_entry, depth=0)
+    root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
+    root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
+    root_node.sync_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
+    print(f"{clr_blu}Done.{clr_rst}\n")
 
 
 if __name__ == "__main__":

@@ -3,6 +3,8 @@
 
 import re
 import os.path
+import pydicom
+import functools
 from boxsdk import JWTAuth, Client
 from datetime import datetime
 from pytz import timezone
@@ -45,10 +47,7 @@ tz_east = timezone("US/Eastern")
 # Print Color Setup #
 
 clr_mgn = fg('magenta')
-clr_cyn = fg('cyan')
-clr_grn = fg('green')
 clr_blu = fg('blue')
-clr_bld = attr('bold')
 clr_bgr = fg('green') + attr('bold')
 clr_bor = fg('gold_1') + attr('bold')
 clr_brd = fg('red') + attr('bold')
@@ -86,12 +85,13 @@ def get_local_subfolders(local_subitems, regex_subfolder=None):
     :return: A list of DirEntry folders
     :rtype: [DirEntry]
     """
-    if not regex_subfolder:
-        filter_obj = filter(lambda local_subitem: os.DirEntry.is_dir(local_subitem), local_subitems)
-    else:
+    if regex_subfolder:
         filter_obj = filter(lambda local_subitem: os.DirEntry.is_dir(local_subitem) and
                                                   re.match(regex_subfolder, local_subitem.name),
                             local_subitems)
+    else:
+        filter_obj = filter(lambda local_subitem: os.DirEntry.is_dir(local_subitem), local_subitems)
+
     return list(filter_obj)
 
 
@@ -106,12 +106,13 @@ def get_local_subfiles(local_subitems, regex_subfile=None):
     :return: A list of DirEntry files
     :rtype: [DirEntry]
     """
-    if not regex_subfile:
-        filter_obj = filter(lambda local_subitem: os.DirEntry.is_file(local_subitem), local_subitems)
-    else:
+    if regex_subfile:
         filter_obj = filter(lambda local_subitem: os.DirEntry.is_file(local_subitem) and
                                                   re.match(regex_subfile, local_subitem.name),
                             local_subitems)
+    else:
+        filter_obj = filter(lambda local_subitem: os.DirEntry.is_file(local_subitem), local_subitems)
+
     return list(filter_obj)
 
 
@@ -136,7 +137,7 @@ def get_box_authenticated_client(box_json_config_path, is_verbose=False):
         raise ValueError(f"`box_json_config_path` must be a path to the JSON config file for your Box JWT app")
     auth = JWTAuth.from_settings_file(box_json_config_path)
     if is_verbose:
-        print(f"{clr_blu}Authenticating...{clr_rst}\n")
+        print(f"{clr_blu}Authenticating...{clr_rst}")
     auth.authenticate_instance()
     return Client(auth)
 
@@ -154,11 +155,9 @@ def print_box_user_info(box_client):
     print(f"Login: {user.login}")
 
 
-def get_box_subitems(box_client, box_folder, fields=box_folder_attrs):
+def get_box_subitems(box_folder, fields=box_folder_attrs):
     """Get a collection of all immediate subitems in Box Folder
 
-    :param box_client: An authenticated Box client
-    :type  box_client: Client
     :param box_folder: A Box Folder whose contents we want to fetch
     :type  box_folder: Folder
     :param fields: An optional list of Box subitem fields to include with each item
@@ -169,7 +168,7 @@ def get_box_subitems(box_client, box_folder, fields=box_folder_attrs):
     """
     items = []
     # fetch folder items and add subfolders to list
-    for item in box_client.folder(folder_id=box_folder['id']).get_items(fields=fields):
+    for item in box_folder.get_items(fields=fields):
         items.append(item)
     return items
 
@@ -183,7 +182,7 @@ def get_box_subfolders(box_subitems):
     :return: A list of Box Folders
     :rtype: list[Folder]
     """
-    return list(filter(lambda box_subitem: box_subitem.type == "folder", box_subitems))
+    return [box_subitem for box_subitem in box_subitems if box_subitem.type == "folder"]
 
 
 def get_box_subfiles(box_subitems):
@@ -195,23 +194,21 @@ def get_box_subfiles(box_subitems):
     :return: A list of Box Files
     :rtype: list[File]
     """
-    return list(filter(lambda box_subitem: box_subitem.type == "file", box_subitems))
+    return [box_subitem for box_subitem in box_subitems if box_subitem.type == "file"]
 
 
-def get_corresponding_box_subfolder(local_subfolder, box_client, box_folder):
+def get_corresponding_box_subfolder(local_subfolder, box_folder):
     """Get box subfolder that corresponds BY NAME to local subfolder
 
     :param local_subfolder: A DirEntry subfolder whose corresponding Box subfolder we want to find
     :type  local_subfolder: DirEntry
-    :param box_client: An authenticated Box Client
-    :type  box_client: Client
     :param box_folder: A Box Folder whose contents may hold the corresponding Box subfolder
     :type  box_folder: Folder
 
     :return: A Box Folder we want to return
     :rtype: Folder
     """
-    box_subitems = get_box_subitems(box_client, box_folder)
+    box_subitems = get_box_subitems(box_folder)
     box_subfolders = get_box_subfolders(box_subitems)
     box_subfolder_target = None
     for box_subfolder in box_subfolders:
@@ -220,20 +217,18 @@ def get_corresponding_box_subfolder(local_subfolder, box_client, box_folder):
     return box_subfolder_target
 
 
-def get_corresponding_box_subfile(local_subfile, box_client, box_folder):
+def get_corresponding_box_subfile(local_subfile, box_folder):
     """Get Box subFile that corresponds BY NAME to local subfile
 
     :param local_subfile: A DirEntry subfile whose corresponding Box subFile we want to find
     :type  local_subfile: DirEntry
-    :param box_client: An authenticated Box Client
-    :type  box_client: Client
     :param box_folder: A Box Folder whose contents may hold the corresponding Box subFile
     :type  box_folder: Folder
 
     :return: A Box File we want to return
     :rtype: File
     """
-    box_subitems = get_box_subitems(box_client, box_folder)
+    box_subitems = get_box_subitems(box_folder)
     box_subfiles = get_box_subfiles(box_subitems)
     box_subfile_target = None
     for box_subfile in box_subfiles:
@@ -355,13 +350,11 @@ def create_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles,
     return created_box_subfiles_ids
 
 
-def update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, box_subfiles, is_verbose=False):
+def update_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles, is_verbose=False):
     """Update existing Box subFiles that are found in--but are older than--local subfiles
 
     :param local_subfiles: A list of DirEntry files to sync Box against
     :type  local_subfiles: list[DirEntry]
-    :param box_client: An authenticated Box client
-    :type  box_client: Client
     :param box_folder: Parent Box Folder to put updated Box subFiles into
     :type  box_folder: Folder
     :param box_subfiles: A list of Box Files to sync against local files
@@ -377,7 +370,7 @@ def update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, b
         list(filter(lambda localsubfile: localsubfile.name in box_subfiles_names, local_subfiles))
     updated_box_subfiles_ids = []
     for local_subfile in local_subfiles_in_local_in_box:
-        corres_box_subfile = get_corresponding_box_subfile(local_subfile, box_client, box_folder)
+        corres_box_subfile = get_corresponding_box_subfile(local_subfile, box_folder)
         # Local subfile modified timestamp
         local_subfile_modified_psx = local_subfile.stat().st_mtime
         local_subfile_modified_dt = datetime.fromtimestamp(local_subfile_modified_psx, tz=tz_east)
@@ -421,13 +414,11 @@ def sync_box_subfolders(local_subfolders, box_folder, box_subfolders, is_verbose
     return deleted_box_subfolders_ids, created_box_subfolders_ids
 
 
-def sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, update_subfiles=False, is_verbose=False):
+def sync_box_subfiles(local_subfiles, box_folder, box_subfiles, update_subfiles=False, is_verbose=False):
     """Run functions to sync Box subFiles
 
     :param local_subfiles: A list of DirEntry files to sync Box against
     :type  local_subfiles: list[DirEntry]
-    :param box_client: An authenticated Box client
-    :type  box_client: Client
     :param box_folder: A parent Box Folder to sync local files in
     :type  box_folder: Folder
     :param box_subfiles: A list of Box Files to sync against local files
@@ -453,7 +444,7 @@ def sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, upda
     # (1,1) Found in MADCBrain, Found in Box: Update Box subFile with updated local subfile
     if update_subfiles:
         updated_box_subfiles_ids = \
-            update_box_subfiles_found_in_local(local_subfiles, box_client, box_folder, box_subfiles, is_verbose)
+            update_box_subfiles_found_in_local(local_subfiles, box_folder, box_subfiles, is_verbose)
 
     return deleted_box_subfiles_ids, created_box_subfiles_ids, updated_box_subfiles_ids
 
@@ -485,7 +476,8 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
         print(f"{clr_mgn}Box Folder ID{clr_rst}:", box_folder.id)
 
     local_subitems = get_local_subitems(local_folder)
-    box_subitems = get_box_subitems(box_client, box_folder)
+    # box_subitems = get_box_subitems(box_client, box_folder)
+    box_subitems = get_box_subitems(box_folder)
 
     # Folders #
     local_subfolders = get_local_subfolders(local_subitems, regex_subfolder)
@@ -497,7 +489,7 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
     local_subfiles = get_local_subfiles(local_subitems, regex_subfile)
     box_subfiles = get_box_subfiles(box_subitems)
     deleted_box_subfiles_ids, created_box_subfiles_ids, updated_box_subfiles_ids = \
-        sync_box_subfiles(local_subfiles, box_client, box_folder, box_subfiles, update_subfiles, is_verbose)
+        sync_box_subfiles(local_subfiles, box_folder, box_subfiles, update_subfiles, is_verbose)
 
     if is_verbose:
         print(f"  {clr_mgn}Deleted Box subFolders{clr_rst}:", deleted_box_subfolders_ids)
@@ -508,7 +500,82 @@ def walk_local_dir_tree_sync_contents(local_folder, box_client, box_folder,
 
     # Recurse Down #
     for local_subfolder in local_subfolders:
-        corres_box_subfolder = get_corresponding_box_subfolder(local_subfolder, box_client, box_folder)
+        corres_box_subfolder = get_corresponding_box_subfolder(local_subfolder, box_folder)
         walk_local_dir_tree_sync_contents(local_subfolder, box_client, corres_box_subfolder,
                                           regex_subfolder, regex_subfile,
                                           update_subfiles, is_verbose)
+
+
+###########################
+# DICOM Handler Functions #
+
+def get_local_dicom_dataset(dir_entry_file, rgx_dicom=re.compile(r'^i\d+\.MRDC\.\d+$')):
+    """Get the DICOM Dataset from the file that matches the provided Regex
+
+    :param dir_entry_file: A DirEntry file of a DICOM Dataset (where a DICOM "dataset" is a DICOM file)
+    :type  dir_entry_file: DirEntry
+    :param rgx_dicom: A Regex for matching a DICOM Dataset file
+    :type  rgx_dicom: Regex
+
+    :return: A pydicom Dataset
+    :rtype: pydicom Dataset
+    """
+    dicom_dataseries = pydicom.Dataset()
+    if re.match(rgx_dicom, dir_entry_file.name):
+        dicom_dataseries = pydicom.dcmread(dir_entry_file.path)
+
+    return dicom_dataseries
+
+
+def get_local_dicom_sequence(dir_entry_folder, rgx_dicom=re.compile(r'^i\d+\.MRDC\.\d+$'), presort=True):
+    """Get the DICOM Sequence in a given DirEntry folder whose DICOM Datasets that match the provided Regex
+
+    :param dir_entry_folder: A DirEntry folder holding DICOM Datasets that will be bundled as a DICOM Sequence
+    :type  dir_entry_folder: DirEntry
+    :param rgx_dicom: A Regex matching the DICOM filenames
+    :type  rgx_dicom: Regex
+    :param presort: A boolean flag for sorting the DICOM Datasets within the DICOM Sequence before returning it
+    :type  presort: boolean
+
+    :return: pydicom Sequence of DICOM Datasets (where a DICOM "dataset" is a DICOM file)
+    :rtype: pydicom Sequence
+    """
+    subitems = get_local_subitems(dir_entry_folder)
+    dicom_subfiles = get_local_subfiles(subitems, rgx_dicom)
+    if presort:
+        sorted_dicom_subfiles = sorted(dicom_subfiles, key=lambda f: int(f.name.split(".")[-1]))
+        dicom_datasets = map(lambda dicom_subfile: get_local_dicom_dataset(dicom_subfile), sorted_dicom_subfiles)
+    else:
+        dicom_datasets = map(lambda dicom_subfile: get_local_dicom_dataset(dicom_subfile), dicom_subfiles)
+
+    return pydicom.Sequence(dicom_datasets)
+
+
+def get_local_dicom_sequence_series_descrip(dicom_sequence):
+    """Get all the DICOM Datasets as a list from the provided DICOM Sequence
+
+    :param dicom_sequence: A pydicom Sequence of DICOM Datasets (where a DICOM "dataset" is a DICOM file)
+    :type  dicom_sequence: pydicom Sequence
+
+    :return: A list of strings of the pydicom Sequence's Series Descriptions (e.g., "t1sag_208")
+    :rtype: [str]
+    """
+    return list(map(lambda ds: ds.SeriesDescription, dicom_sequence))
+
+
+def all_local_dicom_sequence_series_descrip_match(dicom_sequence, rgx_dicom):
+    """Check whether all DICOM Datasets in a DICOM Sequence match the provided Regex
+
+    :param dicom_sequence: A pydicom Sequence of DICOM Datasets (where a DICOM "dataset" is a DICOM file)
+    :type  dicom_sequence: pydicom Sequence
+    :param rgx_dicom: A Regex matching the dicom Series Description
+    :type  rgx_dicom: Regex
+
+    :return: A boolean for whether all the DICOM Datasets in the Sequence match the Series Description Regex
+    :rtype: boolean
+    """
+    if len(dicom_sequence) == 0:
+        return False
+    series_descrip_map_obj = map(lambda dataset: dataset.SeriesDescription, dicom_sequence)
+    bool_map_obj = map(lambda ser_desc: True if re.match(rgx_dicom, ser_desc) else False, series_descrip_map_obj)
+    return functools.reduce(lambda x, y: x and y, bool_map_obj)

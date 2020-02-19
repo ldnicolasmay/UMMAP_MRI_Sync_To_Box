@@ -11,6 +11,16 @@ import ummap_mri_sync_to_box_helpers as hlps
 import dir_entry_node as den
 
 
+def str2bool(val):
+    if isinstance(val, bool):
+        return val
+    elif val.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif val.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 ########
 # Main #
 
@@ -20,28 +30,44 @@ def main():
     # Parse Args #
 
     parser = argparse.ArgumentParser(description="Sync `madcbrain` MRI DICOMs to Box.")
+
     parser.add_argument('-m', '--mri_path', required=True,
                         help=f"required: " +
                              f"absolute path to local directory containing source MRI folders")
+
     parser.add_argument('-j', '--jwt_cfg', required=True,
                         help=f"required: absolute path to local JWT config file")
+
     parser.add_argument('-b', '--box_folder_id', required=True,
                         help=f"required: destination Box Folder ID")
+
     parser.add_argument('-f', '--subfolder_regex', nargs='+', required=True,
                         help=f"quoted regular expression strings to use for subfolder matches")
+
     parser.add_argument('-s', '--sequence_regex', nargs='+', required=True,
                         help=f"quoted regular expression strings to use for "
                              f"MRI Series Description matches")
-    parser.add_argument('-u', '--update_files', action='store_true',
+
+    parser.add_argument('-u', '--update_files',
+                        type=str2bool, nargs='?', const=True, default=False,
                         help=f"time consuming: update older Box files with new local copies")
-    parser.add_argument('-v', '--verbose', action='store_true',
+
+    parser.add_argument('-r', '--remove_items',
+                        type=str2bool, nargs='?', const=True, default=False,
+                        help=f"danger: remove items not in model tree of folders/files defined by `subfolder_regex`")
+
+    parser.add_argument('-v', '--verbose',
+                        type=str2bool, nargs='?', const=True, default=False,
                         help=f"print actions to stdout")
+
     args = parser.parse_args()
 
     #################
     # Configuration #
 
-    # Access args.verbose once
+    # Access args.update_files, args.remove_items, and args.verbose once
+    update_files = args.update_files
+    remove_items = args.remove_items
     is_verbose = args.verbose
 
     # Set the path of the folder whose MRI contents should be copied to Box
@@ -95,18 +121,19 @@ def main():
     #########################################################
     # Recurse Through Directories to Sync Files/Directories #
 
-    # hlps.walk_local_dir_tree_sync_contents(mri_dir_entry, box_client, box_folder,
-    #                                        rgx_subfolder, rgx_subfile,
-    #                                        update_subfiles=args.update_files, is_verbose=is_verbose)
-
-    # Traverse local source directory to build tree object
-    root_node = den.DirEntryNode(mri_dir_entry, depth=0)
     print(f"Building DirEntryNode tree from root node...")
+    root_node = den.DirEntryNode(mri_dir_entry, depth=0)
+    # Traverse local source directory to build tree object
     root_node.build_tree_from_node(rgx_subfolder, rgx_subfile)
+
     print(f"Pruning nodes...")
     root_node.prune_nodes_without_dicom_dataset_series_descrip(rgx_sequence)
+
     print(f"Syncing nodes to Box...")
-    root_node.sync_tree_object_items(box_folder, update_files=args.update_files, is_verbose=is_verbose)
+    root_node.sync_tree_object_items(box_folder,
+                                     update_files=update_files,
+                                     remove_items=remove_items,
+                                     is_verbose=is_verbose)
     print(f"Done.\n")
 
 

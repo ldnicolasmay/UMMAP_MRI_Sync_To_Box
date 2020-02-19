@@ -174,13 +174,15 @@ class DirEntryNode:
         for dir_entry_node_file in self.child_dir_entry_node_files:
             print("  " * dir_entry_node_file.depth + dir_entry_node_file.dir_entry.name)
 
-    def sync_tree_object_items(self, box_folder, update_files=False, is_verbose=False):
+    def sync_tree_object_items(self, box_folder, update_files=False, remove_items=False, is_verbose=False):
         """Sync to box the folders and files in the tree composed of the calling DirEntry object
 
         :param box_folder: A Box Folder to sync the calling DirEntryNode object's contents into
         :type  box_folder: Box Folder
         :param update_files: A boolean flag for updating Box Files from source based on timestamps
-        :type  box_folder: boolean
+        :type  update_files: boolean
+        :param remove_items: A boolean flag for removing Box Folders and Box Files not in tree object model
+        :type  remove_items: boolean
         :param is_verbose: A boolean flag for verbosity
         :type  is_verbose: boolean
         """
@@ -188,14 +190,21 @@ class DirEntryNode:
         box_subfolders = hlps.get_box_subfolders(box_subitems)
         box_subfiles = hlps.get_box_subfiles(box_subitems)
 
-        self.remove_box_subfolders(box_subfolders, is_verbose)
-        self.remove_box_subfiles(box_subfiles, is_verbose)
-        self.create_box_subfolders(box_folder, box_subfolders, update_files, is_verbose)
+        print("outside remove_items:", remove_items)
+        print("outside not remove_items:", (not remove_items))
+        if remove_items:
+            print("inside remove_items:", remove_items)
+            print("inside not remove_items:", not remove_items)
+            self.remove_box_subfolders(box_subfolders, is_verbose)
+            self.remove_box_subfiles(box_subfiles, is_verbose)
+
+        self.create_box_subfolders(box_folder, box_subfolders, remove_items, update_files, is_verbose)
         self.create_box_subfiles(box_folder, box_subfiles, is_verbose)
+
         if update_files:
             self.update_box_subfiles(box_folder, box_subfiles, is_verbose)
 
-    def create_box_subfolders(self, box_folder, box_subfolders, update_files, is_verbose=False):
+    def create_box_subfolders(self, box_folder, box_subfolders, update_files, remove_items, is_verbose):
         """Helper function: Create Box subFolders based on child folders in calling DirEntryNode object
 
         :param box_folder: A Box Folder to sync the calling DirEntryNode object's contents into
@@ -203,7 +212,9 @@ class DirEntryNode:
         :param box_subfolders: A list of child Box Folders in the Box Folder corresponding to calling DirEntryNode obj.
         :type  box_subfolders: [Box Folder]
         :param update_files: A boolean flag for updating Box Files from source based on timestamps
-        :type  box_folder: boolean
+        :type  update_files: boolean
+        :param remove_items: A boolean flag for removing Box Folders and Box Files not in tree object model
+        :type  remove_items: boolean
         :param is_verbose: A boolean flag for verbosity
         :type  is_verbose: boolean
         """
@@ -221,11 +232,11 @@ class DirEntryNode:
             box_subfolder = box_folder.create_subfolder(dir_entry_node_folder.dir_entry.name)
             if is_verbose:
                 dir_entry_node_folder.print_subitem_action(box_subfolder, "Creating")
-            dir_entry_node_folder.sync_tree_object_items(box_subfolder, update_files, is_verbose)
+            dir_entry_node_folder.sync_tree_object_items(box_subfolder, update_files, remove_items, is_verbose)
 
         for dir_entry_node_folder in subfolders_in_treeobj_in_box:
             box_subfolder = hlps.get_corresponding_box_subfolder(dir_entry_node_folder.dir_entry, box_folder)
-            dir_entry_node_folder.sync_tree_object_items(box_subfolder, update_files, is_verbose)
+            dir_entry_node_folder.sync_tree_object_items(box_subfolder, update_files, remove_items, is_verbose)
 
     def remove_box_subfolders(self, box_subfolders, is_verbose):
         """Helper function: Remove Box subFolders based on absent child folders in calling DirEntryNode object
@@ -252,7 +263,7 @@ class DirEntryNode:
                       f"with ID",
                       f"'{box_subfolder_id}'")
 
-    def create_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
+    def create_box_subfiles(self, box_folder, box_subfiles, is_verbose):
         """
 
         :param box_folder: A Box Folder to sync the calling DirEntryNode object's contents into
@@ -272,7 +283,7 @@ class DirEntryNode:
             if is_verbose:
                 dir_entry_node_file.print_subitem_action(box_subfile, "Creating")
 
-    def update_box_subfiles(self, box_folder, box_subfiles, is_verbose=False):
+    def update_box_subfiles(self, box_folder, box_subfiles, is_verbose):
         """Helper function: Update Box subFiles based on timestamps of child files in calling DirEntryNode object
 
         :param box_folder: A Box Folder to sync the calling DirEntryNode object's contents into

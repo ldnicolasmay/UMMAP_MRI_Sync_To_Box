@@ -190,11 +190,7 @@ class DirEntryNode:
         box_subfolders = hlps.get_box_subfolders(box_subitems)
         box_subfiles = hlps.get_box_subfiles(box_subitems)
 
-        print("outside remove_items:", remove_items)
-        print("outside not remove_items:", (not remove_items))
         if remove_items:
-            print("inside remove_items:", remove_items)
-            print("inside not remove_items:", not remove_items)
             self.remove_box_subfolders(box_subfolders, is_verbose)
             self.remove_box_subfiles(box_subfiles, is_verbose)
 
